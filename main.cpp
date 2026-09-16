@@ -7,9 +7,12 @@
 #include "ResourceManager.hpp"
 #include "ResourceKeys.hpp"
 #include "GameInput.hpp"
-#include "Bullet.hpp"
+#include "BulletManager.hpp"
 #include "Player.hpp"
 #include "raymath.h"
+
+
+
 
 int main()
 {
@@ -22,7 +25,8 @@ int main()
     RM::get().Load();
 
     const Texture2D& background = RM::get().GetTexture(RK::GAME_BG);
-
+    GameConfig::MAP_W = 2560.0f;
+    GameConfig::MAP_H = 1440.0f;
 
     const float tileSize = 64.0f;
     Rectangle wallSourceRec = {0.0f, 0.0f, 16.0f, 16.0f};
@@ -30,31 +34,30 @@ int main()
     RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
     SetTextureFilter(canvas.texture, TEXTURE_FILTER_BILINEAR);
     Rectangle playerSrc = {0.0f,0.0f,(float)RM::get().GetTexture(RK::PLAYER).width,(float)RM::get().GetTexture(RK::PLAYER).height};
-    float mapW = 2560.0f;
-    float mapH = 1440.0f;
+
     float halfW = screenWidth * 0.5f;
     float halfH = screenHeight * 0.5f;
 
     std::vector<Rectangle> wallColliders;
-    for (int x = 0; x < (int)mapW; x += (int)tileSize) {
+    for (int x = 0; x < (int)GameConfig::MAP_W; x += (int)tileSize) {
         wallColliders.push_back({(float)x, 0.0f, tileSize, tileSize});
-        wallColliders.push_back({(float)x, mapH- tileSize, tileSize, tileSize});
+        wallColliders.push_back({(float)x, GameConfig::MAP_H- tileSize, tileSize, tileSize});
     }
-    for (int y = 0; y < (int)mapH; y += (int)tileSize) {
+    for (int y = 0; y < (int)GameConfig::MAP_H; y += (int)tileSize) {
         wallColliders.push_back({ 0.0f, (float)y, tileSize, tileSize });
-        wallColliders.push_back({ mapW - tileSize, (float)y, tileSize, tileSize });
+        wallColliders.push_back({ GameConfig::MAP_W - tileSize, (float)y, tileSize, tileSize });
 }
 
 
 
    Player player(RK::PLAYER);
-    player.SetPosition({mapW * 0.5f, mapH * 0.5f});
+    player.SetPosition({GameConfig::MAP_W * 0.5f, GameConfig::MAP_H * 0.5f});
     Camera2D camera = {};
     camera.zoom = 1.0f;
     camera.target = player.GetPosition();
     camera.offset = {halfW,halfH};
 
-    std::vector<Bullet> bullets;
+    BulletManager bullets;
 
     Vector2 pPos = player.GetPosition();
     float playerSize = 32.0f;
@@ -76,16 +79,11 @@ int main()
         float dt = GetFrameTime();
 
         if (GI::get().State().shoot) {
-            bullets.emplace_back(
-                player.GetFiringPosition(),
-                GI::get().State().aimAngle,
-                600.0f);
+           bullets.Spawn(player.GetFiringPosition(),GI::get().State().aimAngle);
         }
         player.Update(dt);
+        bullets.Update(dt);
 
-        for (auto& b : bullets) {
-            b.Update(dt);
-        }
 
 
 
@@ -121,8 +119,8 @@ for (const auto& wall : wallColliders) {
 
 
 
-        camera.target.x = std::clamp(camera.target.x, halfW, mapW - halfW);
-        camera.target.y = std::clamp(camera.target.y, halfH, mapH - halfH);
+        camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
+        camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
         player.Update(dt);
         BeginTextureMode(canvas);
         ClearBackground(BLACK);
@@ -135,8 +133,8 @@ for (const auto& wall : wallColliders) {
                 DrawTexture(background, x, y, WHITE);
             }
         }
-        for (int y = 0; y < (int)mapH; y += background.height) {
-            for (int x = 0; x < (int)mapW; x += background.width) {
+        for (int y = 0; y < (int)GameConfig::MAP_H; y += background.height) {
+            for (int x = 0; x < (int)GameConfig::MAP_W; x += background.width) {
                 DrawTexture(background, x, y, WHITE);
             }
         }
@@ -144,35 +142,30 @@ for (const auto& wall : wallColliders) {
         player.Draw();
 
 
-        for (auto& b : bullets) b.Draw();
+        bullets.Draw();
 
 
-        for (int x = 0; x < (int)mapW; x += (int)tileSize) {
+        for (int x = 0; x < (int)GameConfig::MAP_W; x += (int)tileSize) {
             Rectangle topDest = { (float)x, 0.0f, tileSize, tileSize };
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, topDest, origin, 0.0f, WHITE);
 
-            Rectangle bottomDest = { (float)x, mapH - tileSize, tileSize, tileSize };
+            Rectangle bottomDest = { (float)x, GameConfig::MAP_H - tileSize, tileSize, tileSize };
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, bottomDest, origin, 0.0f, WHITE);
         }
 
-        for (int y = 0; y < (int)mapH; y += (int)tileSize) {
+        for (int y = 0; y < (int)GameConfig::MAP_H; y += (int)tileSize) {
             Rectangle leftDest = { 0.0f, (float)y, tileSize, tileSize };
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, leftDest, origin, 0.0f, WHITE);
 
-            Rectangle rightDest = { mapW - tileSize, (float)y, tileSize, tileSize };
+            Rectangle rightDest = { GameConfig::MAP_W - tileSize, (float)y, tileSize, tileSize };
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, rightDest, origin, 0.0f, WHITE);
-
-
-
-
-
         }
         EndMode2D();
         DrawRectangle(0, screenHeight - 32, screenWidth, 32, ColorAlpha(DARKBLUE, 0.6f));
         DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Aim: %1.f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
-        DrawText(TextFormat("Bullets: %d", (int)bullets.size()), 768, screenHeight - 24, 20, LIME);
+        DrawText(TextFormat("Bullets: %d/%d", (int)bullets.CountAlive(), bullets.GetPoolTotal()), 700, screenHeight - 24, 20, LIME);
 
 
         EndTextureMode();

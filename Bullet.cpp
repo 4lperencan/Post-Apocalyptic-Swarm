@@ -1,28 +1,52 @@
 #include "Bullet.hpp"
 #include "ResourceKeys.hpp"
 #include "raylib.h"
+#include <raymath.h>// raylibten önce include etmek Vector2 fonksiyonun işlevini değiştirir o yüzden yapma!!!
 #include <cmath>
+#include "GameConfig.hpp"
+#include "SwarmUtils.hpp"
 
-Bullet::Bullet(Vector2 pos, float angleDeg, float speed) {
+Bullet::Bullet() {
     _sprite.Init(RK::BULLET);
     _sprite.frameWidth = 32;
     _sprite.frameHeight = 17;
-    _transform.position = pos;
-    _transform.rotation = angleDeg;
     _transform.scale = 0.5f;
 
-    float rad = angleDeg * DEG2RAD;
-    _velocity =  {cosf(rad) * speed, sinf(rad) * speed};
+
+
 }
 
+void Bullet::Activate(Vector2 pos, float angleDeg, float speed) {
+
+    _alive = true;
+    _transform.position = pos;
+    _transform.rotation = angleDeg;
+    _velocity = Direction(angleDeg) * speed;
+}
+
+
+void Bullet::Deactivate() {
+    _alive = false;
+    _transform.position = GameConfig::OFFSCREEN_POSITION;
+    _velocity = {0.0f, 0.0f};
+}
+
+
+
 void Bullet::Update(float dt) {
-    _transform.position.x += _velocity.x * dt;
-    _transform.position.y += _velocity.y * dt;
+    if (!_alive) return;
+    _transform.position += _velocity * dt;
+
+    if (GameConfig::IsOutSideMap(_transform.position)) {
+        Deactivate();
+    }
+
 
 }
 
 
 
 void Bullet::Draw() {
+    if (!_alive) return;
     _sprite.Draw(_transform);
 }
