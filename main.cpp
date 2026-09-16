@@ -7,6 +7,7 @@
 #include "ResourceManager.hpp"
 #include "ResourceKeys.hpp"
 #include "GameInput.hpp"
+#include "Bullet.hpp"
 #include "Player.hpp"
 #include "raymath.h"
 
@@ -53,6 +54,8 @@ int main()
     camera.target = player.GetPosition();
     camera.offset = {halfW,halfH};
 
+    std::vector<Bullet> bullets;
+
     Vector2 pPos = player.GetPosition();
     float playerSize = 32.0f;
     Rectangle playerHitbox = {
@@ -72,7 +75,19 @@ int main()
 
         float dt = GetFrameTime();
 
-        bool justFired = GI::get().State().shoot;
+        if (GI::get().State().shoot) {
+            bullets.emplace_back(
+                player.GetFiringPosition(),
+                GI::get().State().aimAngle,
+                600.0f);
+        }
+        player.Update(dt);
+
+        for (auto& b : bullets) {
+            b.Update(dt);
+        }
+
+
 
 
 
@@ -127,6 +142,11 @@ for (const auto& wall : wallColliders) {
         }
 
         player.Draw();
+
+
+        for (auto& b : bullets) b.Draw();
+
+
         for (int x = 0; x < (int)mapW; x += (int)tileSize) {
             Rectangle topDest = { (float)x, 0.0f, tileSize, tileSize };
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, topDest, origin, 0.0f, WHITE);
@@ -143,8 +163,7 @@ for (const auto& wall : wallColliders) {
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, rightDest, origin, 0.0f, WHITE);
 
 
-            if(justFired)
-                DrawCircle((int)player.GetFiringPosition().x, (int)player.GetFiringPosition().y, 6.0f, YELLOW);
+
 
 
         }
@@ -153,7 +172,9 @@ for (const auto& wall : wallColliders) {
         DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Aim: %1.f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
-        
+        DrawText(TextFormat("Bullets: %d", (int)bullets.size()), 768, screenHeight - 24, 20, LIME);
+
+
         EndTextureMode();
         float scale = std::min(
             float(GetScreenWidth() / (float)screenWidth),

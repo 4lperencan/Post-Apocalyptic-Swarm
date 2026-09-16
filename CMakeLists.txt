@@ -16,6 +16,7 @@ add_executable(SwarmShooter main.cpp Sprite.cpp
         Movement.cpp
         GameInput.cpp
         ResourceManager.cpp
+        Bullet.cpp
 )
 
 # Raylib ve macOS framework'lerini bağla

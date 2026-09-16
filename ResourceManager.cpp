@@ -7,7 +7,7 @@ void ResourceManager::Unload() {
         UnloadTexture(tex);
     _textures.clear();
 
-    
+
     for (auto& [name, img] : _images)
         UnloadImage(img);
     _images.clear();
@@ -18,6 +18,9 @@ void ResourceManager::Load() {
     loadTextures(RK::GAME_BG, "assets/floor.png");
     loadTextures(RK::GAME_FG, "assets/walls.png");
     loadTextures(RK::PLAYER,  "assets/player_9mmhandgun.png");
+    loadTextures(RK::BULLET, "assets/bullet.png");
+
+
 
     TraceLog(LOG_INFO, "ResourceManager: loaded %d textures", (int)_textures.size());
     TraceLog(LOG_INFO, "ResourceManager: loaded %d images", (int)_images.size());

@@ -14,5 +14,7 @@ void GameInput::Update() {
     float dx = mousePos.x - (GetScreenWidth() * 0.5f);
     float dy = mousePos.y - (GetScreenHeight() * 0.5f);
     _state.aimAngle = atan2f(dy, dx) * RAD2DEG;
+
+
     _state.shoot = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }
