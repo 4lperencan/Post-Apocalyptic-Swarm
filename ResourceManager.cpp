@@ -20,6 +20,7 @@ void ResourceManager::Load() {
     loadTextures(RK::PLAYER,  "assets/player_9mmhandgun.png");
     loadTextures(RK::BULLET, "assets/bullet.png");
     loadTextures(RK::ZOMBIE_MOVE, "assets/zombiewalk.png");
+    loadTextures(RK::ZOMBIE_DEATH,  "assets/zombiedeath.png");
 
 
 

@@ -6,5 +6,6 @@ namespace RK {
     constexpr const char* PLAYER = "player";
     constexpr const char* BULLET = "bullet";
     constexpr const char* ZOMBIE_MOVE = "zombieMove";
+    constexpr const char* ZOMBIE_DEATH = "zombieDeath";
 
 }

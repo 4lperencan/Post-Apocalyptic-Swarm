@@ -16,13 +16,15 @@ void Sprite::Init(const std::string& textureName) {
 }
 
 
-void Sprite::Init(const std::string& textureName, int fw, int fh,int count, float fps) {
+void Sprite::Init(const std::string& textureName, int fw, int fh,
+    int count, float fps, bool looping) {
     texture = &RM::get().GetTexture(textureName);
     frameWidth = fw;
     frameHeight = fh;
     frameDuration = 0.0f;
     frameCount = count;
     frameDuration = (fps > 0.0f) ? 1.0 / fps : 0.0f;
+    loop = looping;
 
     int cols = texture->width / frameWidth;
 
@@ -37,7 +39,6 @@ void Sprite::Init(const std::string& textureName, int fw, int fh,int count, floa
             (float)frameWidth, (float)frameHeight
         };
         sourceRects.push_back(r);
-      //  TraceLog(LOG_INFO, TextFormat("Sprite Frame %d: x=%.0f y=%.0f", i, r.x, r.y));
 
     }
 
@@ -49,19 +50,28 @@ void Sprite::Init(const std::string& textureName, int fw, int fh,int count, floa
 void Sprite::Reset() {
     timer = 0.0f;
     currentFrame = 0;
+    finished = false;
 }
 
 
 
 void Sprite::Update(float dt) {
-    if (frameDuration <= 0.0f || frameCount <= 1) return;
+    if (frameDuration <= 0.0f || frameCount <= 1 || finished) return;
 
     timer += dt;
 
     if (timer > frameDuration) {
         timer -= frameDuration;
         currentFrame++;
-        if (currentFrame >= frameCount) currentFrame = 0;
+        if (currentFrame >= frameCount) {
+            if (loop) {
+                currentFrame = 0;
+            }
+            else {
+                finished = true;
+                currentFrame = frameCount - 1;
+            }
+        }
     }
 
 }
@@ -71,7 +81,7 @@ void Sprite::Update(float dt) {
 
 
 
-void Sprite::Draw(const Transform2D& transform) const {
+void Sprite::Draw(const Transform2D& transform, Color tint) const {
     if (!texture || sourceRects.empty()) return;
 
     float w = frameWidth * transform.scale;
@@ -91,7 +101,7 @@ void Sprite::Draw(const Transform2D& transform) const {
         h * pivot.y
     };
 
-    DrawTexturePro(*texture, source, dest, origin, transform.rotation + rotationOffset, WHITE);
+    DrawTexturePro(*texture, source, dest, origin, transform.rotation + rotationOffset, tint);
     if (GameConfig::SHOW_DEBUG) {
         DrawCircle((int)transform.position.x, (int)transform.position.y, 2.0f, RED);
     }

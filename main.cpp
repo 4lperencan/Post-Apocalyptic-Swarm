@@ -28,7 +28,8 @@ int main()
     const int screenHeight = 720;
     InitWindow(screenWidth, screenHeight, "Swarm Shooter Project");
     SetTargetFPS(60);
-    HideCursor();
+    DisableCursor();
+    SetExitKey(KEY_NULL);
     RM::get().Load();
 
     const Texture2D& background = RM::get().GetTexture(RK::GAME_BG);
@@ -84,12 +85,15 @@ int main()
     while (!WindowShouldClose())
     {
         if (IsKeyPressed(KEY_P)) GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
+        if (IsKeyPressed(KEY_Q))
+            break;
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            if (IsCursorHidden()) EnableCursor();
+            else DisableCursor();
+        }
+
         if (IsKeyPressed(KEY_O)) {
-            for (int i = 0; i <40; i++) {
-                enemies.Spawn({
-                        RandomFloat(0.0f, GameConfig::MAP_W),
-                        RandomFloat(0.0f, GameConfig::MAP_H)});
-            }
+            enemies.SpawnBatch(26);
 
         }
 
@@ -136,16 +140,25 @@ int main()
         for (auto& bullet : bullets.GetPool()) {
             if (!bullet->IsAlive()) continue;
             for (auto& enemy : enemies.GetPool()) {
-                if (!enemy->IsAlive()) continue;
+                if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
                 if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider())) {
                     TraceLog(LOG_INFO,"HIT!!!");
                     bullet->Deactivate();
-                    enemy->Deactivate();
+                    enemy->Kill();
                     break;
                 }
             }
 
         }
+        for (auto& enemy : enemies.GetPool()) {
+            if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
+            if (player.GetCollider().IsCollidingWith(enemy->GetCollider())) {
+                player.Hit();
+            }
+
+        }
+
+
 
         camera.target = player.GetPosition();
 
@@ -196,7 +209,8 @@ int main()
         DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
 
 
-        DrawText(TextFormat("Bullets: %d/%d Enemies: %d/%d",
+        DrawText(TextFormat("HP: %d/%d  Bullets: %d/%d Enemies: %d/%d",
+            player.GetHealth(), player.GetMaxHealth(),
             (int)bullets.CountAlive(), bullets.GetPoolTotal(),enemies.CountAlive(), enemies.GetPoolTotal()),
             700, screenHeight - 24, 20, LIME);
 

@@ -2,7 +2,7 @@
 #include "raylib.h"
 
 namespace GameConfig {
-    inline bool SHOW_DEBUG = false;
+    inline bool SHOW_DEBUG = true;
     constexpr float OFFSCREEN_POS = -9999.0f;
     constexpr Vector2 OFFSCREEN_POSITION = { OFFSCREEN_POS, OFFSCREEN_POS};
 
@@ -27,7 +27,9 @@ namespace GameConfig {
             pos.y < WALL_THICKNESS || pos.y > MAP_H - WALL_THICKNESS;
     }
 
-
+    constexpr float PLAYER_INV_TIME = 1.5f;
+    constexpr int PLAYER_MAX_HEALTH = 3;
+    constexpr float PLAYER_COLLIDER_RADIUS = 25.0f;
     constexpr float playerScale = 1.4f;
     constexpr float playerSpeed = 200.0f;
     constexpr float AIM_SENSITIVITY = 0.15f;

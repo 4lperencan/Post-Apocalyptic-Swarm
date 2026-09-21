@@ -15,12 +15,15 @@ struct Sprite {
     int currentFrame = 0;
     float timer = 0.0f;
     float frameDuration = 0.0f;
+    bool loop = true;
+    bool finished = false;
     std::vector<Rectangle> sourceRects;
 
 
     void Init(const std::string& textureName);
-    void Init(const std::string& textureName, int fw, int fh,int count, float fps);
-    void Draw(const Transform2D& transform) const;
+    void Init(const std::string& textureName, int fw, int fh,int count, float fps,
+        bool looping = true);
+    void Draw(const Transform2D& transform, Color tint = WHITE) const;
     void Update(float dt);
     void Reset();
 };
