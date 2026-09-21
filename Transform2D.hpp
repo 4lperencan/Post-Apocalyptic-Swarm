@@ -15,4 +15,10 @@ struct Transform2D {
     void Translate(Vector2 offset) {
         position += offset;
     }
+
+    void LookAt(Vector2 target) {
+        rotation = AngleToTargetDeg(position, target);
+    }
+
+
 };

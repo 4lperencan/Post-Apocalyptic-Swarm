@@ -9,8 +9,13 @@
 #include "ResourceKeys.hpp"
 #include "GameInput.hpp"
 #include "BulletManager.hpp"
-#include "Enemy.hpp"
+#include "EnemyManager.hpp"
 #include "Player.hpp"
+
+
+
+
+
 
 
 
@@ -61,8 +66,9 @@ int main()
 
     BulletManager bullets;
 
-    Enemy enemy;
-    enemy.SetPosition({GameConfig::MAP_W * 0.5f, GameConfig::MAP_H * 0.5f});
+    EnemyManager enemies;
+    enemies.Init(&player);
+    enemies.Spawn({GameConfig::MAP_W * 0.5f + 200.0f, GameConfig::MAP_H * 0.5f});
 
 
 
@@ -78,8 +84,17 @@ int main()
     while (!WindowShouldClose())
     {
         if (IsKeyPressed(KEY_P)) Sprite::showDebug = !Sprite::showDebug;
+        if (IsKeyPressed(KEY_O)) {
+            enemies.Spawn({
+                RandomFloat(0.0f, GameConfig::MAP_W),
+                RandomFloat(0.0f, GameConfig::MAP_H)});
+        }
 
-        // Fare koordinatlarını pencere yerine 1280x720'lik canvas'a göre oku (letterbox uyumu)
+        if (IsKeyPressed(KEY_L)) {
+         enemies.DeactivateAll();
+        }
+
+        // Fare koordinatlarını pencere yerine 1280x720'lik canvas'a göre oku
         float scale = std::min(
             float(GetScreenWidth() / (float)screenWidth),
             float(GetScreenHeight() / (float)screenHeight)
@@ -105,7 +120,7 @@ int main()
             return false;
         };
 
-        // Eksenleri ayrı ayrı çöz: duvara çarpan eksen geri alınır, diğeri kayar
+        // Eksenleri ayrı ayrı çöz: duvara çarpan eksen geri alınır diğeri kayar
         Vector2 resolved = oldPos;
         resolved.x = newPos.x;
         if (hitsWall(resolved)) resolved.x = oldPos.x;
@@ -117,7 +132,7 @@ int main()
            bullets.Spawn(player.GetFiringPosition(),GI::get().State().aimAngle);
         }
         bullets.Update(dt);
-        enemy.Update(dt);
+        enemies.Update(dt);
 
         camera.target = player.GetPosition();
 
@@ -144,8 +159,7 @@ int main()
 
 
         bullets.Draw();
-        enemy.Draw();
-
+        enemies.Draw();
 
         for (int x = 0; x < (int)GameConfig::MAP_W; x += (int)tileSize) {
             Rectangle topDest = { (float)x, 0.0f, tileSize, tileSize };
@@ -167,7 +181,11 @@ int main()
         DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
-        DrawText(TextFormat("Bullets: %d/%d", (int)bullets.CountAlive(), bullets.GetPoolTotal()), 700, screenHeight - 24, 20, LIME);
+
+
+        DrawText(TextFormat("Bullets: %d/%d Enemies: %d/%d",
+            (int)bullets.CountAlive(), bullets.GetPoolTotal(),enemies.CountAlive(), enemies.GetPoolTotal()),
+            700, screenHeight - 24, 20, LIME);
 
 
         EndTextureMode();
