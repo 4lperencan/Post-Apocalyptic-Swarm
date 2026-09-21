@@ -83,18 +83,18 @@ int main()
 
     while (!WindowShouldClose())
     {
-        if (IsKeyPressed(KEY_P)) Sprite::showDebug = !Sprite::showDebug;
+        if (IsKeyPressed(KEY_P)) GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
         if (IsKeyPressed(KEY_O)) {
-            enemies.Spawn({
-                RandomFloat(0.0f, GameConfig::MAP_W),
-                RandomFloat(0.0f, GameConfig::MAP_H)});
+            for (int i = 0; i <40; i++) {
+                enemies.Spawn({
+                        RandomFloat(0.0f, GameConfig::MAP_W),
+                        RandomFloat(0.0f, GameConfig::MAP_H)});
+            }
+
         }
 
-        if (IsKeyPressed(KEY_L)) {
-         enemies.DeactivateAll();
-        }
 
-        // Fare koordinatlarını pencere yerine 1280x720'lik canvas'a göre oku
+
         float scale = std::min(
             float(GetScreenWidth() / (float)screenWidth),
             float(GetScreenHeight() / (float)screenHeight)
@@ -120,7 +120,6 @@ int main()
             return false;
         };
 
-        // Eksenleri ayrı ayrı çöz: duvara çarpan eksen geri alınır diğeri kayar
         Vector2 resolved = oldPos;
         resolved.x = newPos.x;
         if (hitsWall(resolved)) resolved.x = oldPos.x;
@@ -133,6 +132,20 @@ int main()
         }
         bullets.Update(dt);
         enemies.Update(dt);
+
+        for (auto& bullet : bullets.GetPool()) {
+            if (!bullet->IsAlive()) continue;
+            for (auto& enemy : enemies.GetPool()) {
+                if (!enemy->IsAlive()) continue;
+                if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider())) {
+                    TraceLog(LOG_INFO,"HIT!!!");
+                    bullet->Deactivate();
+                    enemy->Deactivate();
+                    break;
+                }
+            }
+
+        }
 
         camera.target = player.GetPosition();
 

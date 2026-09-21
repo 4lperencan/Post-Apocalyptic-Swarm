@@ -9,6 +9,7 @@ Enemy::Enemy() {
     _sprite.rotationOffset = 90.0f;
     _transform.scale = 0.8f;
     _transform.rotation = 0.0f;
+    _collider.Init(30.0f, _transform);
 }
 
 void Enemy::Retarget() {
@@ -47,8 +48,9 @@ void Enemy::Deactivate() {
 
 void Enemy::Draw() {
     if (!_alive) return;
-
     _sprite.Draw(_transform);
+    _collider.DrawDebug();
+
 }
 void Enemy::SetPosition(Vector2 position) {
     _transform.position = position;

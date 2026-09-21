@@ -13,6 +13,9 @@ public:
     void Draw();
     void DeactivateAll();
 
+    const std::vector<std::unique_ptr<Enemy>>& GetPool() const { return _pool; }
+
+
     int GetPoolTotal() const { return (int)_pool.size(); }
     int CountAlive() const {
         int n = 0;

@@ -1,4 +1,5 @@
 #pragma once
+#include "CircleCollider.hpp"
 #include "Transform2D.hpp"
 #include "Sprite.hpp"
 
@@ -17,12 +18,14 @@ public:
     void Deactivate();
     void Activate(Vector2 pos);
     bool IsAlive() const { return _alive; }
+    const CircleCollider& GetCollider() const { return _collider; }
 
 
 
 private:
     Transform2D _transform;
     Sprite _sprite;
+    CircleCollider _collider;
     const Player* _player = nullptr;
     float _speed = 80.0f;
     float _retargetTimer = 0.0f;

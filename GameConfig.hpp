@@ -2,6 +2,7 @@
 #include "raylib.h"
 
 namespace GameConfig {
+    inline bool SHOW_DEBUG = false;
     constexpr float OFFSCREEN_POS = -9999.0f;
     constexpr Vector2 OFFSCREEN_POSITION = { OFFSCREEN_POS, OFFSCREEN_POS};
 

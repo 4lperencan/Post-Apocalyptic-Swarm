@@ -9,6 +9,7 @@
 Bullet::Bullet() {
     _sprite.Init(RK::BULLET, 32, 17, 2, 5.0f);
     _transform.scale = 0.6f;
+    _collider.Init(6.0f, _transform);
 
 
 
@@ -49,4 +50,5 @@ void Bullet::Update(float dt) {
 void Bullet::Draw() {
     if (!_alive) return;
     _sprite.Draw(_transform);
+    _collider.DrawDebug();
 }
