@@ -8,16 +8,76 @@ void Sprite::Init(const std::string& textureName) {
     texture = &RM::get().GetTexture(textureName);
     frameWidth = texture->width;
     frameHeight = texture->height;
+    frameCount = 1;
+    currentFrame = 0;
+    sourceRects.clear();
+    sourceRects.push_back({ 0.0f, 0.0f, (float)frameWidth, (float)frameHeight });
 }
+
+
+void Sprite::Init(const std::string& textureName, int fw, int fh,int count, float fps) {
+    texture = &RM::get().GetTexture(textureName);
+    frameWidth = fw;
+    frameHeight = fh;
+    frameDuration = 0.0f;
+    frameCount = count;
+    frameDuration = (fps > 0.0f) ? 1.0 / fps : 0.0f;
+
+    int cols = texture->width / frameWidth;
+
+    sourceRects.reserve(frameCount);
+    sourceRects.clear();
+
+    for (int i = 0; i < frameCount; i++) {
+        int col = i % cols;
+        int row = i / cols;
+        Rectangle r = {
+            (float)(col * frameWidth), (float)(row * frameHeight),
+            (float)frameWidth, (float)frameHeight
+        };
+        sourceRects.push_back(r);
+      //  TraceLog(LOG_INFO, TextFormat("Sprite Frame %d: x=%.0f y=%.0f", i, r.x, r.y));
+
+    }
+
+
+
+
+}
+
+void Sprite::Reset() {
+    timer = 0.0f;
+    currentFrame = 0;
+}
+
+
+
+void Sprite::Update(float dt) {
+    if (frameDuration <= 0.0f || frameCount <= 1) return;
+
+    timer += dt;
+
+    if (timer > frameDuration) {
+        timer -= frameDuration;
+        currentFrame++;
+        if (currentFrame >= frameCount) currentFrame = 0;
+    }
+
+}
+
+
+
+
+
+
 void Sprite::Draw(const Transform2D& transform) const {
-    if (!texture) return;
+    if (!texture || sourceRects.empty()) return;
 
     float w = frameWidth * transform.scale;
     float h = frameHeight * transform.scale;
 
-    Rectangle source = {
-        0,0, (float)frameWidth, (float)frameHeight
-    };
+    Rectangle source = sourceRects[currentFrame];
+
     Rectangle dest = {
         transform.position.x,
         transform.position.y,
@@ -30,7 +90,7 @@ void Sprite::Draw(const Transform2D& transform) const {
         h * pivot.y
     };
 
-    DrawTexturePro(*texture, source, dest, origin, transform.rotation, WHITE);
+    DrawTexturePro(*texture, source, dest, origin, transform.rotation + rotationOffset, WHITE);
     if (showDebug) {
         DrawCircle((int)transform.position.x, (int)transform.position.y, 2.0f, RED);
     }

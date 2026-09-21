@@ -19,6 +19,14 @@ namespace GameConfig {
     }
 
 
+    constexpr float WALL_THICKNESS = 64.0f;
+
+    inline bool IsInsideWall(Vector2 pos) {
+        return pos.x < WALL_THICKNESS || pos.x > MAP_W - WALL_THICKNESS ||
+            pos.y < WALL_THICKNESS || pos.y > MAP_H - WALL_THICKNESS;
+    }
+
+
     constexpr float playerScale = 1.4f;
     constexpr float playerSpeed = 200.0f;
     constexpr float AIM_SENSITIVITY = 0.15f;

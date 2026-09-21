@@ -12,7 +12,7 @@ class GameInput {
         GameInput& operator=(const GameInput&) = delete;
 
         const MovementState& State() const {return _state;}
-        void Update();
+        void Update(const Camera2D& camera, Vector2 aimOrigin);
     private:
         GameInput() = default;
 

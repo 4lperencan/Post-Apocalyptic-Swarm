@@ -2,14 +2,16 @@
 #include <ostream>
 #include <vector>
 #include "raylib.h"
+#include "raymath.h"
 #include "algorithm"
 #include "GameConfig.hpp"
 #include "ResourceManager.hpp"
 #include "ResourceKeys.hpp"
 #include "GameInput.hpp"
 #include "BulletManager.hpp"
+#include "Enemy.hpp"
 #include "Player.hpp"
-#include "raymath.h"
+
 
 
 
@@ -21,7 +23,7 @@ int main()
     const int screenHeight = 720;
     InitWindow(screenWidth, screenHeight, "Swarm Shooter Project");
     SetTargetFPS(60);
-    DisableCursor();
+    HideCursor();
     RM::get().Load();
 
     const Texture2D& background = RM::get().GetTexture(RK::GAME_BG);
@@ -59,6 +61,11 @@ int main()
 
     BulletManager bullets;
 
+    Enemy enemy;
+    enemy.SetPosition({GameConfig::MAP_W * 0.5f, GameConfig::MAP_H * 0.5f});
+
+
+
     Vector2 pPos = player.GetPosition();
     float playerSize = 32.0f;
     Rectangle playerHitbox = {
@@ -72,56 +79,50 @@ int main()
     {
         if (IsKeyPressed(KEY_P)) Sprite::showDebug = !Sprite::showDebug;
 
-        GI::get().Update();
-        Vector2 moveDir = GI::get().State().moveDir;
+        // Fare koordinatlarını pencere yerine 1280x720'lik canvas'a göre oku (letterbox uyumu)
+        float scale = std::min(
+            float(GetScreenWidth() / (float)screenWidth),
+            float(GetScreenHeight() / (float)screenHeight)
+            );
+        float offsetX = (GetScreenWidth() - screenWidth * scale) * 0.5f;
+        float offsetY = (GetScreenHeight() - screenHeight * scale) * 0.5f;
+        SetMouseOffset((int)-offsetX, (int)-offsetY);
+        SetMouseScale(1.0f / scale, 1.0f / scale);
 
+        GI::get().Update(camera, player.GetPosition());
 
         float dt = GetFrameTime();
+
+        Vector2 oldPos = player.GetPosition();
+        player.Update(dt);
+        Vector2 newPos = player.GetPosition();
+
+        auto hitsWall = [&](Vector2 center) {
+            Rectangle box = { center.x - playerSize * 0.5f, center.y - playerSize * 0.5f, playerSize, playerSize };
+            for (const auto& wall : wallColliders) {
+                if (CheckCollisionRecs(box, wall)) return true;
+            }
+            return false;
+        };
+
+        // Eksenleri ayrı ayrı çöz: duvara çarpan eksen geri alınır, diğeri kayar
+        Vector2 resolved = oldPos;
+        resolved.x = newPos.x;
+        if (hitsWall(resolved)) resolved.x = oldPos.x;
+        resolved.y = newPos.y;
+        if (hitsWall(resolved)) resolved.y = oldPos.y;
+        player.SetPosition(resolved);
 
         if (GI::get().State().shoot) {
            bullets.Spawn(player.GetFiringPosition(),GI::get().State().aimAngle);
         }
-        player.Update(dt);
         bullets.Update(dt);
-
-
-
-
-
-
-
-
-        Vector2 oldPos = player.GetPosition();
-        playerSize = 32.0f;
-
-        player.SetPosition({ oldPos.x + moveDir.x * 200.0f * dt, oldPos.y});
-        Rectangle boxX = { player.GetPosition().x - playerSize * 0.5f, player.GetPosition().y - playerSize * 0.5f, playerSize, playerSize };
-
-        for (const auto& wall : wallColliders) {
-    if (CheckCollisionRecs(boxX, wall)) {
-        player.SetPosition({ oldPos.x, player.GetPosition().y });
-        break;
-    }
-}
-    Vector2 currentPos = player.GetPosition();
-player.SetPosition({ currentPos.x, currentPos.y + moveDir.y * 200.0f * dt });
-Rectangle boxY = { player.GetPosition().x - playerSize * 0.5f, player.GetPosition().y - playerSize * 0.5f, playerSize, playerSize };
-
-for (const auto& wall : wallColliders) {
-    if (CheckCollisionRecs(boxY, wall)) {
-        player.SetPosition({ player.GetPosition().x, currentPos.y });
-        break;
-    }
-}
-
+        enemy.Update(dt);
 
         camera.target = player.GetPosition();
 
-
-
         camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
         camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
-        player.Update(dt);
         BeginTextureMode(canvas);
         ClearBackground(BLACK);
         BeginMode2D(camera);
@@ -143,6 +144,7 @@ for (const auto& wall : wallColliders) {
 
 
         bullets.Draw();
+        enemy.Draw();
 
 
         for (int x = 0; x < (int)GameConfig::MAP_W; x += (int)tileSize) {
@@ -164,18 +166,11 @@ for (const auto& wall : wallColliders) {
         DrawRectangle(0, screenHeight - 32, screenWidth, 32, ColorAlpha(DARKBLUE, 0.6f));
         DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
-        DrawText(TextFormat("Aim: %1.f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
+        DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
         DrawText(TextFormat("Bullets: %d/%d", (int)bullets.CountAlive(), bullets.GetPoolTotal()), 700, screenHeight - 24, 20, LIME);
 
 
         EndTextureMode();
-        float scale = std::min(
-            float(GetScreenWidth() / (float)screenWidth),
-            float(GetScreenHeight() / (float)screenHeight)
-            );
-
-        float offsetX = (GetScreenWidth() - screenWidth * scale) * 0.5f;
-        float offsetY = (GetScreenHeight() - screenHeight * scale) * 0.5f;
 
         Rectangle src = { 0, 0, (float)screenWidth, -(float)screenHeight };
         Rectangle dest = {offsetX, offsetY, screenWidth * scale, screenHeight * scale};
