@@ -14,6 +14,9 @@
 
 
 
+enum class GameState {Playing, GameOver};
+
+
 
 
 
@@ -67,9 +70,11 @@ int main()
 
     BulletManager bullets;
 
+    int wave = 1;
+
     EnemyManager enemies;
     enemies.Init(&player);
-    enemies.Spawn({GameConfig::MAP_W * 0.5f + 200.0f, GameConfig::MAP_H * 0.5f});
+    enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
 
 
 
@@ -82,6 +87,8 @@ int main()
         playerSize
     };
 
+    GameState gameState = GameState::Playing;
+
     while (!WindowShouldClose())
     {
         if (IsKeyPressed(KEY_P)) GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
@@ -92,8 +99,21 @@ int main()
             else DisableCursor();
         }
 
-        if (IsKeyPressed(KEY_O)) {
-            enemies.SpawnBatch(26);
+        if (enemies.IsBatchComplete()) {
+            wave++;
+            enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
+
+        }
+
+        if (gameState == GameState::GameOver && IsKeyPressed(KEY_R)) {
+            player.Reset();
+            player.SetPosition({GameConfig::MAP_W * 0.5f, GameConfig::MAP_H * 0.5f});
+            bullets.DeactivateAll();
+            enemies.DeactivateAll();
+            gameState = GameState::Playing;
+            wave = 1;
+            enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
+
 
         }
 
@@ -112,58 +132,62 @@ int main()
 
         float dt = GetFrameTime();
 
-        Vector2 oldPos = player.GetPosition();
-        player.Update(dt);
-        Vector2 newPos = player.GetPosition();
+        if (gameState == GameState::Playing) {
+            Vector2 oldPos = player.GetPosition();
+            player.Update(dt);
+            Vector2 newPos = player.GetPosition();
 
-        auto hitsWall = [&](Vector2 center) {
-            Rectangle box = { center.x - playerSize * 0.5f, center.y - playerSize * 0.5f, playerSize, playerSize };
-            for (const auto& wall : wallColliders) {
-                if (CheckCollisionRecs(box, wall)) return true;
+            auto hitsWall = [&](Vector2 center) {
+                Rectangle box = { center.x - playerSize * 0.5f, center.y - playerSize * 0.5f, playerSize, playerSize };
+                for (const auto& wall : wallColliders) {
+                    if (CheckCollisionRecs(box, wall)) return true;
+                }
+                return false;
+            };
+
+            Vector2 resolved = oldPos;
+            resolved.x = newPos.x;
+            if (hitsWall(resolved)) resolved.x = oldPos.x;
+            resolved.y = newPos.y;
+            if (hitsWall(resolved)) resolved.y = oldPos.y;
+            player.SetPosition(resolved);
+
+            if (GI::get().State().shoot) {
+               bullets.Spawn(player.GetFiringPosition(),GI::get().State().aimAngle);
             }
-            return false;
-        };
+            bullets.Update(dt);
+            enemies.Update(dt);
 
-        Vector2 resolved = oldPos;
-        resolved.x = newPos.x;
-        if (hitsWall(resolved)) resolved.x = oldPos.x;
-        resolved.y = newPos.y;
-        if (hitsWall(resolved)) resolved.y = oldPos.y;
-        player.SetPosition(resolved);
+            for (auto& bullet : bullets.GetPool()) {
+                if (!bullet->IsAlive()) continue;
+                for (auto& enemy : enemies.GetPool()) {
+                    if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
+                    if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider())) {
+                        TraceLog(LOG_INFO,"HIT!!!");
+                        bullet->Deactivate();
+                        enemy->Kill();
+                        break;
+                    }
+                }
 
-        if (GI::get().State().shoot) {
-           bullets.Spawn(player.GetFiringPosition(),GI::get().State().aimAngle);
-        }
-        bullets.Update(dt);
-        enemies.Update(dt);
-
-        for (auto& bullet : bullets.GetPool()) {
-            if (!bullet->IsAlive()) continue;
+            }
             for (auto& enemy : enemies.GetPool()) {
                 if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
-                if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider())) {
-                    TraceLog(LOG_INFO,"HIT!!!");
-                    bullet->Deactivate();
-                    enemy->Kill();
-                    break;
+                if (player.GetCollider().IsCollidingWith(enemy->GetCollider())) {
+                    player.Hit();
                 }
+
             }
 
-        }
-        for (auto& enemy : enemies.GetPool()) {
-            if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
-            if (player.GetCollider().IsCollidingWith(enemy->GetCollider())) {
-                player.Hit();
-            }
+            camera.target = player.GetPosition();
+
+            camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
+            camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
+
+        if (player.IsDead()) gameState = GameState::GameOver;
 
         }
 
-
-
-        camera.target = player.GetPosition();
-
-        camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
-        camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
         BeginTextureMode(canvas);
         ClearBackground(BLACK);
         BeginMode2D(camera);
@@ -209,11 +233,29 @@ int main()
         DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
 
 
-        DrawText(TextFormat("HP: %d/%d  Bullets: %d/%d Enemies: %d/%d",
-            player.GetHealth(), player.GetMaxHealth(),
+        DrawText(TextFormat("WV:%d  HP: %d/%d  Bullets: %d/%d Enemies: %d/%d",
+        wave,
+        player.GetHealth(), player.GetMaxHealth(),
             (int)bullets.CountAlive(), bullets.GetPoolTotal(),enemies.CountAlive(), enemies.GetPoolTotal()),
             700, screenHeight - 24, 20, LIME);
 
+
+        if (gameState == GameState::GameOver) {
+            DrawRectangle(0,0, GameConfig::BASE_W,
+                GameConfig::BASE_H, ColorAlpha(BLACK,
+                    0.7f));
+            const char* title  = "GAME OVER";
+            int titleW = MeasureText(title, 60);
+            DrawText(title, (GameConfig::BASE_W - titleW) / 2,
+                GameConfig::BASE_H / 2 - 60,
+                60, RED);
+
+            const char* prompt = "Press R to restart";
+            int promptW = MeasureText(prompt, 32);
+            DrawText(prompt, (GameConfig::BASE_W - promptW) / 2,
+                GameConfig::BASE_H / 2 + 12,
+                32, RAYWHITE);
+        }
 
         EndTextureMode();
 

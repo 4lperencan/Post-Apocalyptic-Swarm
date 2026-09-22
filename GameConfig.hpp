@@ -36,4 +36,10 @@ namespace GameConfig {
     constexpr Vector2 PLAYER_PIVOT = {0.31f, 0.58f};
     constexpr Vector2 PLAYER_MUZZLE_OFFSET = {53.0f, 0.1f};
 
+
+    //Dalgalar
+    constexpr int WAVE_ENEMY_BASE = 8;
+    constexpr int WAVE_ENEMY_RAMP = 4;
+
+
 }
