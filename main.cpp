@@ -14,7 +14,7 @@
 
 
 
-enum class GameState {Playing, GameOver};
+enum class GameState {Menu, Playing, GameOver};
 
 
 
@@ -33,7 +33,12 @@ int main()
     SetTargetFPS(60);
     DisableCursor();
     SetExitKey(KEY_NULL);
+    InitAudioDevice();
     RM::get().Load();
+
+    Music gameMusic = RM::get().GetMusic(RK::MUSIC_GAME);
+    Sound waveFinishedSound = RM::get().GetSound(RK::SFX_WAVE_FINISHED);
+    SetMusicVolume(gameMusic, 0.5f);
 
     const Texture2D& background = RM::get().GetTexture(RK::GAME_BG);
     GameConfig::MAP_W = 2560.0f;
@@ -71,6 +76,7 @@ int main()
     BulletManager bullets;
 
     int wave = 1;
+    int score = 0;
 
     EnemyManager enemies;
     enemies.Init(&player);
@@ -87,7 +93,7 @@ int main()
         playerSize
     };
 
-    GameState gameState = GameState::Playing;
+    GameState gameState = GameState::Menu;
 
     while (!WindowShouldClose())
     {
@@ -99,10 +105,18 @@ int main()
             else DisableCursor();
         }
 
-        if (enemies.IsBatchComplete()) {
+        UpdateMusicStream(gameMusic);
+
+        if (gameState == GameState::Playing && enemies.IsBatchComplete()) {
             wave++;
+            PlaySound(waveFinishedSound);
             enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
 
+        }
+
+        if (gameState == GameState::Menu && IsKeyPressed(KEY_ENTER)) {
+            gameState = GameState::Playing;
+            PlayMusicStream(gameMusic);
         }
 
         if (gameState == GameState::GameOver && IsKeyPressed(KEY_R)) {
@@ -112,7 +126,9 @@ int main()
             enemies.DeactivateAll();
             gameState = GameState::Playing;
             wave = 1;
+            score = 0;
             enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
+            PlayMusicStream(gameMusic);
 
 
         }
@@ -166,6 +182,7 @@ int main()
                         TraceLog(LOG_INFO,"HIT!!!");
                         bullet->Deactivate();
                         enemy->Kill();
+                        score += GameConfig::SCORE_PER_KILL;
                         break;
                     }
                 }
@@ -184,7 +201,10 @@ int main()
             camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
             camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
 
-        if (player.IsDead()) gameState = GameState::GameOver;
+        if (player.IsDead()) {
+            gameState = GameState::GameOver;
+            StopMusicStream(gameMusic);
+        }
 
         }
 
@@ -227,17 +247,45 @@ int main()
             DrawTexturePro(RM::get().GetTexture(RK::GAME_FG), wallSourceRec, rightDest, origin, 0.0f, WHITE);
         }
         EndMode2D();
-        DrawRectangle(0, screenHeight - 32, screenWidth, 32, ColorAlpha(DARKBLUE, 0.6f));
-        DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
-        DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
-        DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
+        if (gameState != GameState::Menu) {
+            DrawRectangle(0, screenHeight - 32, screenWidth, 32, ColorAlpha(DARKBLUE, 0.6f));
+            DrawText(TextFormat("Player: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, screenHeight - 24, 20, LIME);
+            DrawText(TextFormat("Camera: %.0f, %.0f", camera.target.x, camera.target.y), 256, screenHeight - 24, 20, LIME);
+            DrawText(TextFormat("Aim: %.1f", GI::get().State().aimAngle), 512, screenHeight - 24, 20, LIME);
 
 
-        DrawText(TextFormat("WV:%d  HP: %d/%d  Bullets: %d/%d Enemies: %d/%d",
-        wave,
-        player.GetHealth(), player.GetMaxHealth(),
-            (int)bullets.CountAlive(), bullets.GetPoolTotal(),enemies.CountAlive(), enemies.GetPoolTotal()),
-            700, screenHeight - 24, 20, LIME);
+            DrawText(TextFormat("WV:%d  HP: %d/%d  Bullets: %d/%d Enemies: %d/%d",
+            wave,
+            player.GetHealth(), player.GetMaxHealth(),
+                (int)bullets.CountAlive(), bullets.GetPoolTotal(),enemies.CountAlive(), enemies.GetPoolTotal()),
+                700, screenHeight - 24, 20, LIME);
+
+            const char* scoreText = TextFormat("SCORE: %d", score);
+            int scoreW = MeasureText(scoreText, 32);
+            DrawText(scoreText, GameConfig::BASE_W - scoreW - 20, 16, 32, RAYWHITE);
+        }
+
+        if (gameState == GameState::Menu) {
+            DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.75f));
+
+            const char* menuTitle = "SWARM SHOOTER";
+            int menuTitleW = MeasureText(menuTitle, 72);
+            DrawText(menuTitle, (GameConfig::BASE_W - menuTitleW) / 2,
+                GameConfig::BASE_H / 2 - 120,
+                72, LIME);
+
+            const char* startPrompt = "Press ENTER to start";
+            int startPromptW = MeasureText(startPrompt, 32);
+            DrawText(startPrompt, (GameConfig::BASE_W - startPromptW) / 2,
+                GameConfig::BASE_H / 2,
+                32, RAYWHITE);
+
+            const char* controls = "WASD: move    Mouse: aim    Left click: shoot";
+            int controlsW = MeasureText(controls, 20);
+            DrawText(controls, (GameConfig::BASE_W - controlsW) / 2,
+                GameConfig::BASE_H / 2 + 60,
+                20, LIGHTGRAY);
+        }
 
 
         if (gameState == GameState::GameOver) {
@@ -250,10 +298,16 @@ int main()
                 GameConfig::BASE_H / 2 - 60,
                 60, RED);
 
+            const char* finalScore = TextFormat("Score: %d   Wave: %d", score, wave);
+            int finalScoreW = MeasureText(finalScore, 32);
+            DrawText(finalScore, (GameConfig::BASE_W - finalScoreW) / 2,
+                GameConfig::BASE_H / 2 + 12,
+                32, YELLOW);
+
             const char* prompt = "Press R to restart";
             int promptW = MeasureText(prompt, 32);
             DrawText(prompt, (GameConfig::BASE_W - promptW) / 2,
-                GameConfig::BASE_H / 2 + 12,
+                GameConfig::BASE_H / 2 + 60,
                 32, RAYWHITE);
         }
 
@@ -271,6 +325,7 @@ int main()
     }
     UnloadRenderTexture(canvas);
     RM::get().Unload();
+    CloseAudioDevice();
 
     CloseWindow();
     return 0;

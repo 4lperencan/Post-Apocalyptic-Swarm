@@ -2,7 +2,7 @@
 #include "raylib.h"
 
 namespace GameConfig {
-    inline bool SHOW_DEBUG = true;
+    inline bool SHOW_DEBUG = false;
     constexpr float OFFSCREEN_POS = -9999.0f;
     constexpr Vector2 OFFSCREEN_POSITION = { OFFSCREEN_POS, OFFSCREEN_POS};
 
@@ -40,6 +40,8 @@ namespace GameConfig {
     //Dalgalar
     constexpr int WAVE_ENEMY_BASE = 8;
     constexpr int WAVE_ENEMY_RAMP = 4;
+
+    constexpr int SCORE_PER_KILL = 10;
 
 
 }
