@@ -86,7 +86,5 @@ The `assets` folder is copied next to the executable automatically after buildin
 
 ## Credits
 
-* Music: "Cave Rave" — from itch.io, by TODO_AUTHOR (TODO_LINK)
-* Wave finished voice line — from itch.io, by TODO_AUTHOR (TODO_LINK)
-* Player, bullet, floor and wall sprites — TODO_SOURCE
-* Zombie walk and death animations: based on TODO_SOURCE, recolored and extended for this project
+* Music: "Cave Rave" — from itch.io, by Dani Maccari (https://dani-maccari.itch.io/jumppack-music-loops)
+* Wave finished voice line — from itch.io, by Dillon Becker (https://dillonbecker.itch.io/sdap)
