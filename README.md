@@ -1,6 +1,6 @@
-# SwarmShooter
+# Post Apocalyptic Swarm
 
-A 2D top-down zombie survival shooter made with **C++17** and **raylib**. Built as a Semester 1 project for Fontys University of Applied Sciences (ICT).
+A 2D top-down post-apocalyptic zombie survival shooter made with **C++17** and **raylib**. Built as a Semester 1 project for Fontys University of Applied Sciences (ICT).
 
 Zombies come in waves and chase you. Every wave is bigger than the last one. Survive as long as you can and get the highest score.
 
@@ -73,11 +73,11 @@ Zombies come in waves and chase you. Every wave is bigger than the last one. Sur
 ### Build and run
 
 ```bash
-git clone https://github.com/4lperencan/SwarmShooter.git
-cd SwarmShooter
+git clone https://github.com/4lperencan/Post-Apocalyptic-Swarm.git
+cd Post-Apocalyptic-Swarm
 cmake -B build -S .
 cmake --build build
-./build/SwarmShooter
+./build/PostApocalypticSwarm
 ```
 
 The `assets` folder is copied next to the executable automatically after building.

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(SwarmShooter)
+project(PostApocalypticSwarm)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -10,7 +10,7 @@ list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
 find_package(raylib REQUIRED)
 
 # Kaynak dosyan src/main.cpp olduğu için:
-add_executable(SwarmShooter main.cpp Sprite.cpp
+add_executable(PostApocalypticSwarm main.cpp Sprite.cpp
         GameConfig.hpp
         Player.cpp
         Movement.cpp
@@ -26,7 +26,7 @@ add_executable(SwarmShooter main.cpp Sprite.cpp
 )
 
 # Raylib ve macOS framework'lerini bağla
-target_link_libraries(SwarmShooter PRIVATE
+target_link_libraries(PostApocalypticSwarm PRIVATE
         raylib
         "-framework IOKit"
         "-framework Cocoa"
@@ -36,9 +36,9 @@ target_link_libraries(SwarmShooter PRIVATE
 
 # Assets klasörünü build çıktısına otomatik kopyala (resim yolları patlamasın)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-    add_custom_command(TARGET SwarmShooter POST_BUILD
+    add_custom_command(TARGET PostApocalypticSwarm POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/assets
-            $<TARGET_FILE_DIR:SwarmShooter>/assets
+            $<TARGET_FILE_DIR:PostApocalypticSwarm>/assets
     )
 endif()

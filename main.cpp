@@ -27,7 +27,7 @@ int main()
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     const int screenWidth = 1280;
     const int screenHeight = 720;
-    InitWindow(screenWidth, screenHeight, "Swarm Shooter Project");
+    InitWindow(screenWidth, screenHeight, "Post Apocalyptic Swarm");
     SetTargetFPS(60);
     DisableCursor();
     SetExitKey(KEY_NULL);
@@ -252,11 +252,11 @@ int main()
         if (gameState == GameState::Menu) {
             DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.75f));
 
-            const char* menuTitle = "SWARM SHOOTER";
-            int menuTitleW = MeasureText(menuTitle, 72);
+            const char* menuTitle = "POST APOCALYPTIC SWARM";
+            int menuTitleW = MeasureText(menuTitle, 64);
             DrawText(menuTitle, (GameConfig::BASE_W - menuTitleW) / 2,
                 GameConfig::BASE_H / 2 - 120,
-                72, LIME);
+                64, LIME);
 
             const char* startPrompt = "Press ENTER to start";
             int startPromptW = MeasureText(startPrompt, 32);
