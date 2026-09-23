@@ -1,18 +1,19 @@
 # SwarmShooter
 
-# SwarmShooter
+A 2D top-down zombie survival shooter made with **C++17** and **raylib**. Built as a Semester 1 project for Fontys University of Applied Sciences (ICT).
 
-A 2D top-down wave-based arena survival game developed with **C++17** and the **Raylib** library. This project is built as a Semester 1 foundation project for Fontys University of Applied Sciences (ICT).
+Zombies come in waves and chase you. Every wave is bigger than the last one. Survive as long as you can and get the highest score.
 
 ---
 
-## Features & Implementation Highlights
+## Gameplay
 
-* **Object Pooling Pattern:** Projectiles are managed through a custom `BulletManager` pool (`std::vector<std::unique_ptr<Bullet>>`) to prevent runtime memory allocations and heap fragmentation during heavy combat.
-* **Canvas-Based Letterboxing:** Game rendering targets an internal `1280x720` render texture (`RenderTexture2D`) with bilinear filtering, preserving native aspect ratios across resizable windows with letterbox/pillarbox padding.
-* **Camera Clamping & Dynamic Arena:** A 2D camera smoothly tracks the player across a `2560x1440` world boundary with hard coordinate clamping to eliminate off-map rendering artifacts.
-* **Muzzle Vector Math:** Accurate projectile spawn origins calculated via weapon pivot offset vectors rotated by player aim angle (`DEG2RAD` rotational transforms).
-* **Grid & AABB Collision:** Tile-based arena boundary colliders (`64x64`) with axis-separated Axis-Aligned Bounding Box (AABB) resolution preventing player penetration through walls.
+* Start screen, press `ENTER` to play.
+* Zombies spawn in waves away from the player and chase you. When a wave is cleared the next, larger wave starts.
+* Every zombie you kill gives 10 points.
+* You have 3 health. After taking a hit you are invincible for 1.5 seconds (the player flashes red).
+* When your health reaches 0 the game is over. Your score and wave are shown, press `R` to restart.
+* Background music plays during the game, and a voice line plays when a wave is finished.
 
 ---
 
@@ -20,45 +21,72 @@ A 2D top-down wave-based arena survival game developed with **C++17** and the **
 
 | Action | Input |
 | :--- | :--- |
-| **Move** | `W`, `A`, `S`, `D` |
-| **Aim** | Mouse Position |
-| **Shoot** | Left Mouse Button |
-| **Toggle Hitbox Debug** | `P` |
+| Start game | `ENTER` |
+| Move | `W`, `A`, `S`, `D` |
+| Aim | Mouse |
+| Shoot | Left mouse button |
+| Restart (on game over) | `R` |
+| Release / lock mouse cursor | `ESC` |
+| Toggle debug view (colliders) | `P` |
+| Quit | `Q` |
 
 ---
 
-## Tech Stack & Architecture
+## How it works
 
-* **Language:** C++17
-* **Framework:** Raylib (Hardware Accelerated 2D/3D)
-* **Build System:** CMake & Ninja
-* **Core Architecture:**
-    * `Player`: Transform management, velocity updates, and directional muzzle offsets.
-    * `Bullet` & `BulletManager`: Reusable projectile instances with activation/deactivation life cycles.
-    * `GameInput`: Centralized input polling and normalized mouse-angle calculations.
-    * `ResourceManager`: Asset loading and cached texture retrieval.
-    * `GameConfig`: Centralized constant configurations for map, arena bounds, and player attributes.
+* **Game loop and states:** the game switches between `Menu`, `Playing` and `GameOver` (`GameState` in `main.cpp`). Gameplay only updates while `Playing`.
+* **Object pooling:** bullets and zombies are kept in pools (`BulletManager`, `EnemyManager`, `std::vector<std::unique_ptr<...>>`). Dead objects are reused instead of being deleted and created again.
+* **Enemies:** each zombie has a small state machine (`Moving`, `Dying`). It turns toward the player every 1–2 seconds, and plays a death animation when shot.
+* **Collision:** circle colliders (`CircleCollider`) for bullets, zombies and the player. The arena walls use axis-separated rectangle (AABB) collision, so the player can slide along walls.
+* **Aiming:** the mouse position is converted to world coordinates, so aiming is correct even when the camera stops at the edge of the map. Bullets spawn at the gun's muzzle, rotated with the player.
+* **Camera:** follows the player on a 2560x1440 map and is clamped so it never shows outside the map.
+* **Resolution:** the game is drawn to a fixed 1280x720 canvas and scaled to the window with letterboxing, so resizing the window keeps the same view.
+* **Resources:** textures, music and sounds are loaded once by `ResourceManager` and shared.
+* **Frame-rate independent movement:** all movement is multiplied by delta time.
+
+### Project structure
+
+| File | Purpose |
+| :--- | :--- |
+| `main.cpp` | Window, game loop, game states, waves, score, collisions, drawing |
+| `GameConfig.hpp` | Game settings (map size, player stats, wave size, score) |
+| `Player` | Player movement, health, invincibility, muzzle position |
+| `Bullet`, `BulletManager` | Bullets and the bullet pool |
+| `Enemy`, `EnemyManager` | Zombies, their pool and wave spawning |
+| `CircleCollider` | Circle collision |
+| `Sprite` | Drawing and animating sprite sheets |
+| `Transform2D` | Position, rotation and scale |
+| `GameInput`, `Movement`, `MovementState` | Reading input and applying it to the player |
+| `ResourceManager`, `ResourceKeys` | Loading and sharing assets |
+| `SwarmUtils.hpp` | Small math helpers |
 
 ---
 
-## Getting Started
+## Building
 
-### Prerequisites
+### Requirements
 
-* CMake (>= 3.20)
-* C++17 compatible compiler (Clang / AppleClang / GCC)
-* Raylib installed via Homebrew (`brew install raylib`) or linked as a system library
+* CMake 3.20 or newer
+* A C++17 compiler (Clang / AppleClang / GCC)
+* raylib (on macOS: `brew install raylib`)
 
-### Building
+### Build and run
 
 ```bash
-# Clone the repository
-git clone [https://github.com/4lperencan/SwarmShooter.git](https://github.com/4lperencan/SwarmShooter.git)
+git clone https://github.com/4lperencan/SwarmShooter.git
 cd SwarmShooter
-
-# Generate build files and compile
 cmake -B build -S .
 cmake --build build
-
-# Run the executable
 ./build/SwarmShooter
+```
+
+The `assets` folder is copied next to the executable automatically after building.
+
+---
+
+## Credits
+
+* Music: "Cave Rave" — from itch.io, by TODO_AUTHOR (TODO_LINK)
+* Wave finished voice line — from itch.io, by TODO_AUTHOR (TODO_LINK)
+* Player, bullet, floor and wall sprites — TODO_SOURCE
+* Zombie walk and death animations: based on TODO_SOURCE, recolored and extended for this project

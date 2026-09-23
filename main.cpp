@@ -1,5 +1,3 @@
-#include <iostream>
-#include <ostream>
 #include <vector>
 #include "raylib.h"
 #include "raymath.h"
@@ -49,7 +47,6 @@ int main()
     Vector2 origin = { 0.0f, 0.0f };
     RenderTexture2D canvas = LoadRenderTexture(screenWidth, screenHeight);
     SetTextureFilter(canvas.texture, TEXTURE_FILTER_BILINEAR);
-    Rectangle playerSrc = {0.0f,0.0f,(float)RM::get().GetTexture(RK::PLAYER).width,(float)RM::get().GetTexture(RK::PLAYER).height};
 
     float halfW = screenWidth * 0.5f;
     float halfH = screenHeight * 0.5f;
@@ -84,14 +81,7 @@ int main()
 
 
 
-    Vector2 pPos = player.GetPosition();
     float playerSize = 32.0f;
-    Rectangle playerHitbox = {
-        pPos.x - playerSize * 0.5f,
-        pPos.y - playerSize * 0.5f,
-        playerSize,
-        playerSize
-    };
 
     GameState gameState = GameState::Menu;
 
@@ -179,7 +169,6 @@ int main()
                 for (auto& enemy : enemies.GetPool()) {
                     if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
                     if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider())) {
-                        TraceLog(LOG_INFO,"HIT!!!");
                         bullet->Deactivate();
                         enemy->Kill();
                         score += GameConfig::SCORE_PER_KILL;
@@ -214,11 +203,6 @@ int main()
 
 
 
-        for (int y = 0; y < 0; y += background.height) {
-            for (int x = 0; x < screenWidth; x += background.width) {
-                DrawTexture(background, x, y, WHITE);
-            }
-        }
         for (int y = 0; y < (int)GameConfig::MAP_H; y += background.height) {
             for (int x = 0; x < (int)GameConfig::MAP_W; x += background.width) {
                 DrawTexture(background, x, y, WHITE);

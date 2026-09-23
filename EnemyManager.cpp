@@ -2,7 +2,7 @@
 
 #include "GameConfig.hpp"
 #include "Player.hpp"
-#include "Raylib.h"
+#include "raylib.h"
 #include <raymath.h>
 #include "SwarmUtils.hpp"
 

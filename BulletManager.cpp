@@ -1,5 +1,4 @@
 #include "BulletManager.hpp"
-#include "BulletManager.hpp"
 
 void BulletManager::Spawn(Vector2 pos, float angleDeg) {
     for (auto& bullet : _pool) {
